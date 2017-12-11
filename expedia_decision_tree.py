@@ -1,86 +1,73 @@
 from random import seed
 from random import randrange
 from csv import reader
-
 import datetime
 import pandas as pd
 import numpy as np
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.cross_validation import train_test_split
 import ml_metrics as metrics
 
 
-# Split a dataset based on an attribute and an attribute value
-def test_split(index, value, dataset):
-	left, right = list(), list()
-	for row in dataset:
-		if row[index] < value:
-			left.append(row)
+def split_rows(i, val, dataset):
+	first, second = list(), list()
+	for rec in dataset:
+		if rec[i] < val:
+			first.append(rec)
 		else:
-			right.append(row)
-	return left, right
+			second.append(rec)
+	return first, second
 
-# Calculate the Gini index for a split dataset
-def gini_index(groups, classes):
-	# count all samples at split point
-	n_instances = float(sum([len(group) for group in groups]))
-	# sum weighted Gini index for each group
-	gini = 0.0
-	for group in groups:
-		size = float(len(group))
-		# avoid divide by zero
+# Calculate GINI for split
+def gini_index(splits, classes):
+	n = float(sum([len(split) for split in splits]))
+	gini_value = 0.0
+	for split in splits:
+		size = float(len(split))
 		if size == 0:
 			continue
-		score = 0.0
-		# score the group based on the score for each class
+		result = 0.0
 		for class_val in classes:
-			p = [row[-1] for row in group].count(class_val) / size
-			score += p * p
-		# weight the group score by its relative size
-		gini += (1.0 - score) * (size / n_instances)
-	return gini
+			prob = [row[-1] for row in split].count(class_val) / size
+			result += prob * prob
+		gini_value += (1.0 - result) * (size / n)
+	return gini_value
 
-# Select the best split point for a dataset
+# Select split attribute
 def get_split(dataset):
 	class_values = list(set(row[-1] for row in dataset))
-	b_index, b_value, b_score, b_groups = 999, 999, 999, None
+	b_index, b_value, b_score, b_splits = 9999, 9999, 9999, None
 	for index in range(len(dataset[0])-1):
 		for row in dataset:
-			groups = test_split(index, row[index], dataset)
-			gini = gini_index(groups, class_values)
+			splits = split_rows(index, row[index], dataset)
+			gini = gini_index(splits, class_values)
 			if gini < b_score:
-				b_index, b_value, b_score, b_groups = index, row[index], gini, groups
-	return {'index':b_index, 'value':b_value, 'groups':b_groups}
+				b_index, b_value, b_score, b_splits = index, row[index], gini, splits
+	return {'index':b_index, 'value':b_value, 'splits':b_splits}
 
-# Create a terminal tree_node value
-def to_terminal(group):
-	outcomes = [row[-1] for row in group]
-	return max(set(outcomes), key=outcomes.count)
+# create terminal node woth class
+def create_leaf_node(split):
+	vals = [row[-1] for row in split]
+	return max(set(vals), key=vals.count)
 
-# Create child splits for a tree_node or make terminal
-def split(tree_node, max_depth, min_size, depth):
-	left, right = tree_node['groups']
-	del(tree_node['groups'])
-	# check for a no split
+# create tree
+def create_tree(tree_node, max_depth, min_size, depth):
+	left, right = tree_node['splits']
+	del(tree_node['splits'])
 	if not left or not right:
-		tree_node['left'] = tree_node['right'] = to_terminal(left + right)
+		tree_node['left'] = tree_node['right'] = create_leaf_node(left + right)
 		return
-	# check for max depth
 	if depth >= max_depth:
-		tree_node['left'], tree_node['right'] = to_terminal(left), to_terminal(right)
+		tree_node['left'], tree_node['right'] = create_leaf_node(left), create_leaf_node(right)
 		return
-	# process left child
 	if len(left) <= min_size:
-		tree_node['left'] = to_terminal(left)
+		tree_node['left'] = create_leaf_node(left)
 	else:
 		tree_node['left'] = get_split(left)
-		split(tree_node['left'], max_depth, min_size, depth+1)
-	# process right child
+		create_tree(tree_node['left'], max_depth, min_size, depth + 1)
 	if len(right) <= min_size:
-		tree_node['right'] = to_terminal(right)
+		tree_node['right'] = create_leaf_node(right)
 	else:
 		tree_node['right'] = get_split(right)
-		split(tree_node['right'], max_depth, min_size, depth+1)
+		create_tree(tree_node['right'], max_depth, min_size, depth + 1)
 
 # search in tree to find class
 def search_tree(tree_node, row):
@@ -99,12 +86,12 @@ def decision_tree_algo(train, test, max_depth, min_size):
 	
 	root = get_split(train)
 	
-	split(root, max_depth, min_size, 1)
+	create_tree(root, max_depth, min_size, 1)
 	
 	results = list()
 	
-	for row in test: 
-		result = search_tree(root, row)
+	for rec in test: 
+		result = search_tree(root, rec)
 		results.append(result)
 	return(results)
 
@@ -174,7 +161,7 @@ data_type={'is_booking':bool,'srch_ci' : np.str_, 'srch_co' : np.str_,
            'orig_destination_distance':np.float64, 'date_time':np.str_,
            'hotel_market':np.int32}
 
-data_frame = pd.read_csv('train_medium.csv',dtype=data_type, usecols=data_type, parse_dates=['date_time'] ,sep=',')
+data_frame = pd.read_csv('train.csv',dtype=data_type, usecols=data_type, parse_dates=['date_time'] ,sep=',')
 data_frame = data_frame[(data_frame['hotel_cluster'] == 91)  | (data_frame['hotel_cluster'] == 41) | (data_frame['hotel_cluster'] == 65) | (data_frame['hotel_cluster'] == 48) | (data_frame['hotel_cluster'] == 25)]#| (data_frame['hotel_cluster'] == 33)| (data_frame['hotel_cluster'] == 95)| (data_frame['hotel_cluster'] == 18)| (data_frame['hotel_cluster'] == 21)]
 data_frame['year'] = data_frame['date_time'].dt.year
 
@@ -213,5 +200,4 @@ max_depth = 3
 min_size = 10
 
 accuracies = process(dataset, no_of_folds, max_depth, min_size)
-#print('accuracies: %s' % accuracies)
 print('Mean Accuracy: %.3f%%' % (sum(accuracies)/float(len(accuracies))))
