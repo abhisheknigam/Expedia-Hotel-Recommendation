@@ -122,7 +122,7 @@ dtype={'is_booking':bool,
       }
 
 import pandas as pd
-df0=pd.read_csv("/Users/moulikagarwal/Desktop/UF/Courses/Fall 2017/IDM/Project/Final_project/train.csv",dtype=dtype, usecols=dtype, parse_dates=['date_time'] ,sep=',').dropna()
+df0=pd.read_csv("train.csv",dtype=dtype, usecols=dtype, parse_dates=['date_time'] ,sep=',').dropna()
 
 df0 = df0[(df0['hotel_cluster'] == '91')  | (df0['hotel_cluster'] == '41') | (df0['hotel_cluster'] == '48') | (df0['hotel_cluster'] == '25') | 
            (df0['hotel_cluster'] == '33') | (df0['hotel_cluster'] == '65') | (df0['hotel_cluster'] == '95') | (df0['hotel_cluster'] == '18') |
