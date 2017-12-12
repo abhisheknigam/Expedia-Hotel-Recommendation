@@ -14,3 +14,9 @@ Execution steps for Softmax Algorithm
 1. Download and extract the train dataset.
 2. Move inside the directory where you downloaded "train.csv"
 3. run python Softmax.py
+
+Execution steps for Random Forest Algorithm
+1. Download and extract the train dataset.
+2. Move inside the directory where you downloaded "train.csv"
+3. run python Random_forest_algorithm.py
+4. Currently it is running for 5 clusters, if you need to run for 2 or entire clusters, comment code line # 290.
