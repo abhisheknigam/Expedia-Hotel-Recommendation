@@ -20,3 +20,11 @@ Execution steps for Random Forest Algorithm
 2. Move inside the directory where you downloaded "train.csv"
 3. run python Random_forest_algorithm.py
 4. Currently it is running for 5 clusters, if you need to run for 2 or entire clusters, comment code line # 290.
+
+
+Execution steps for Naive Bayes Algorithm
+
+1. Download and extract the train dataset.
+2. Move inside the directory where you downloaded "train.csv"
+3. Open the Ipython notebook - Naive Bayes Implementation.ipynb in Anaconda or use the NaiveBayes.py file to run the code. Ipthon notebook is preferred as the code was developed on it.
+4. Run all the cells.
